@@ -56,7 +56,7 @@ namespace ScenarioTests
                     fakerRandomizer.Int(1900, 2000) * 10000 + fakerRandomizer.Int(1, 12) * 100 + fakerRandomizer.Int(1, 31)));
             }
 
-            _output.WriteLine("\nBorn in 1964:");
+            _output.WriteLine("\nRicerca - nati nel 1964:");
 
             if (persons["year"][1964].Any())
             {
@@ -67,7 +67,7 @@ namespace ScenarioTests
             }
             else _output.WriteLine("None.");
 
-            _output.WriteLine("\nBorn in June:");
+            _output.WriteLine("\nRicerca - nati in Giugno:");
 
             if (persons["month"]["Jun"].Any())
             {
@@ -78,7 +78,7 @@ namespace ScenarioTests
             }
             else _output.WriteLine("None.");
 
-            _output.WriteLine("\nNamed John:");
+            _output.WriteLine("\nRicerca - Con nome di battesimo 'John':");
 
             if (persons["name"]["John"].Any())
             {
