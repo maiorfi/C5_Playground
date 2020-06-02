@@ -1,25 +1,34 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using C5;
 
-namespace ScenarioTests.Entities
+namespace ScenarioTests.C5_Extensions
 {
-    public interface IIndexer<Q, R>
+    public interface IIndex<Q, R>
     {
         ICollectionValue<R> this[Q x] { get; }
+
+        IEnumerator<R> GetEnumerator();
+
+        IEnumerable<R> AsEnumerable();
     }
 
     // An index maker has a name, it supports adding and removing items
     // from the index, and looking up items by key (here of type
     // Object).
-    public abstract class IndexMaker<T> : IIndexer<object, T>
+    public abstract class IndexMaker<T> : IIndex<object, T>
     {
         public string Name { get; }
         public abstract bool Add(T item);
         public abstract bool Remove(T item);
         public abstract ICollectionValue<T> this[object key] { get; }
+
+        public abstract IEnumerator<T> GetEnumerator();
+
+        public abstract IEnumerable<T> AsEnumerable();
 
         public IndexMaker(string name)
         {
@@ -59,12 +68,28 @@ namespace ScenarioTests.Entities
         {
             var key = _fun(item);
 
-            return !_dictionary.Contains(key) ? false : _dictionary[key].Remove(item);
+            return _dictionary.Contains(key) && _dictionary[key].Remove(item);
         }
 
         public ICollectionValue<T> this[Q key] => _dictionary[key];
 
-        public override ICollectionValue<T> this[object key] => _dictionary[(Q) key];
+        public override ICollectionValue<T> this[object key] => _dictionary[(Q)key];
+
+        public override IEnumerator<T> GetEnumerator()
+        {
+            foreach (var key in _dictionary.Keys)
+            {
+                foreach (var value in _dictionary[key])
+                {
+                    yield return value;
+                }
+            }
+        }
+
+        public override IEnumerable<T> AsEnumerable()
+        {
+            return _dictionary.Values.SelectMany(x=>x);
+        }
 
         public override string ToString()
         {
@@ -72,17 +97,17 @@ namespace ScenarioTests.Entities
         }
     }
 
-    // Weakly typed implementation of multiple indexers on a class T.  
+    // Weakly typed implementation of multiple indexes on a class T.  
 
     // The implementation is an array of index makers, each consisting
     // of the index's name and its implementation which supports adding
     // and removing T objects, and looking up T objects by the key
     // relevant for that index.
-    public class Indexed<T> where T : class
+    public class Index<T> where T : class
     {
         private readonly IndexMaker<T>[] _indexMakers;
 
-        public Indexed(params IndexMaker<T>[] indexMakers)
+        public Index(params IndexMaker<T>[] indexMakers)
         {
             _indexMakers = indexMakers;
         }
@@ -110,7 +135,7 @@ namespace ScenarioTests.Entities
             return result;
         }
 
-        public IIndexer<object, T> this[string name]
+        public IIndex<object, T> this[string name]
         {
             get
             {
@@ -139,35 +164,5 @@ namespace ScenarioTests.Entities
 
             return sb.ToString();
         }
-    }
-
-    // Sample class with two fields but many possible indexes
-    public class Person
-    {
-        public string FirstName { get; }
-        public string LastName { get; }
-        public int Date { get; } // YYYYMMDD as in 20070725
-
-        public Person(string fname, string lname, int date)
-        {
-            FirstName = fname;
-            LastName = lname;
-            Date = date;
-        }
-
-        public override string ToString()
-        {
-            return $"{FirstName} {LastName} ({Date})";
-        }
-    }
-
-    // The interface of a strongly typed indexing of PersonIndexed objects:
-    // (Not yet used)
-    public interface IPersonIndexes
-    {
-        IIndexer<string, Person> Name { get; }
-        IIndexer<int, Person> Year { get; }
-        IIndexer<int, Person> Day { get; }
-        IIndexer<string, Person> Month { get; }
     }
 }
